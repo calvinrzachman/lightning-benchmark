@@ -1,0 +1,103 @@
+version: '3.4'
+services:
+  timescale:
+    image: timescaledev/timescaledb-ha:pg12-latest
+    container_name: timescale
+    restart: unless-stopped
+    command: -c ssl=on -c ssl_cert_file=/temp/cert/server.crt -c ssl_key_file=/temp/cert/server.key -c max_connections=200
+    ports:
+      - 5432:5432/tcp
+    env_file:
+      - database.env
+    volumes:
+      - ./pg-init:/docker-entrypoint-initdb.d
+      - ./pg-cert:/temp/cert
+
+  bitcoind:
+    image: kylemanna/bitcoind
+    # platform: linux/arm64
+    ports:
+      - 8332:8332
+      - 18443:18443
+      - 18444:18444
+      - 28332:28332
+      - 28333:28333
+    volumes:
+      - ./bitcoin.conf:/bitcoin/.bitcoin/bitcoin.conf
+
+  lnd-alice:
+    restart: unless-stopped
+    # image: lightninglabs/lnd:v0.18.3-beta
+    # image: czachman/lnd:v0.18.3-beta-calvin
+    # image: czachman/lnd:v0.18.3-beta-calvin-2 (success with this)
+    # NOTE(calvin): This build does not contain the global DB lock.
+    image: czachman/lnd:v0.18.3-beta-calvin-3
+    depends_on:
+      - bitcoind
+    environment:
+      - BACKEND=bitcoind
+    volumes:
+      - ./lnd.conf:/root/.lnd/lnd.conf
+      - lnd-alice:/cfg
+    ports:
+      - 10009:10009
+      - 9735:9735
+      - 5002:5000
+    command:
+      - "--tlsextradomain=lnd-alice"
+
+  lnd-bob:
+    restart: unless-stopped
+    # image: lightninglabs/lnd:v0.18.3-beta
+    # image: czachman/lnd:v0.18.3-beta-calvin
+    # image: czachman/lnd:v0.18.3-beta-calvin-2
+    # NOTE(calvin): This build does not contain the global DB lock.
+    image: czachman/lnd:v0.18.3-beta-calvin-3
+    depends_on:
+      - bitcoind
+    environment:
+      - BACKEND=bitcoind
+    ports:
+      - 5001:5000
+    volumes:
+      - ./lnd.conf:/root/.lnd/lnd.conf
+      - lnd-bob:/cfg
+    command:
+      - "--tlsextradomain=lnd-bob"
+
+  paymentservice:
+    # image: czachman/paymentservice:v0.3.2-beta-dev-chanrouter
+    # NOTE(calvin): This build depends on lnd/kvdb that does *not* have global
+    # DB lock for postgres.
+    image: czachman/paymentservice:v0.3.7-beta-dev-chanrouter
+    container_name: paymentservice
+    # networks:
+    #   - lightning-benchmark_default
+    volumes:
+      - ./paymentservice:/root/.paymentservice
+    ports:
+      - 13010:13010
+      # NOTE(calvin): Profiling port.
+      - 6060:6060
+    depends_on:
+      - lnd-alice
+      - lnd-bob
+      - bitcoind
+      - timescale
+    command: ["/bin/paymentserviced", "daemon"]
+
+  # NOTE(calvin): Opted to run the test with one off "docker run" commands.
+  # loadtest:
+  #   build: loadtest
+  #   depends_on:
+  #     - lnd-alice
+  #     - lnd-bob
+  #   volumes:
+  #     - lnd-alice:/lnd-alice
+  #     - lnd-bob:/lnd-bob
+  #     - ./${LOADTEST_CONFIG_FILE}:/loadtest.yml
+
+volumes:
+  lnd-alice:
+  lnd-bob:
+    
