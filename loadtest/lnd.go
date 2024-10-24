@@ -147,9 +147,10 @@ func (l *lndConnection) SendPayment(invoice string) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	stream, err := l.routerClient.SendPayment(ctx, &routerrpc.SendPaymentRequest{
+	stream, err := l.routerClient.SendPaymentV2(ctx, &routerrpc.SendPaymentRequest{
 		PaymentRequest:    invoice,
 		TimeoutSeconds:    60,
+		FeeLimitSat:       1111,
 		NoInflightUpdates: true,
 	})
 	if err != nil {
@@ -161,7 +162,7 @@ func (l *lndConnection) SendPayment(invoice string) error {
 		return err
 	}
 
-	if update.State != routerrpc.PaymentState_SUCCEEDED {
+	if update.Status != lnrpc.Payment_SUCCEEDED {
 		return errors.New("payment failed")
 	}
 
@@ -196,7 +197,7 @@ func (l *lndConnection) SendKeysend(destination string, amtMsat int64) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	stream, err := l.routerClient.SendPayment(ctx, &req)
+	stream, err := l.routerClient.SendPaymentV2(ctx, &req)
 	if err != nil {
 		return err
 	}
@@ -206,7 +207,7 @@ func (l *lndConnection) SendKeysend(destination string, amtMsat int64) error {
 		return err
 	}
 
-	if update.State != routerrpc.PaymentState_SUCCEEDED {
+	if update.Status != lnrpc.Payment_SUCCEEDED {
 		return errors.New("payment failed")
 	}
 
