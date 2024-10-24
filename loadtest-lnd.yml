@@ -3,18 +3,28 @@ bitcoind:
   user: test
   pass: test
 sender:
-  host: lnd-alice:9735
+  # NOTE(calvin): Uncomment to run test with Payment Service in the loop.
+  host: paymentservice:13010
   lnd:
-    tlsCertPath: /lnd-alice/tls.cert
-    rpcHost: lnd-alice:10009
-    macaroonPath: /lnd-alice/admin.macaroon
+    rpcHost: paymentservice:13010
+    tlsCertPath: /paymentservice/tls.cert
+    macaroonPath: /paymentservice/admin.macaroon
+  # host: lnd-alice:9735
+  # lnd:
+  #   tlsCertPath: /lnd-alice/tls.cert
+  #   rpcHost: lnd-alice:10009
+  #   macaroonPath: /lnd-alice/admin.macaroon
+# TODO(calvin): Try using the PS to receive.
 receiver:
   host: lnd-bob:9735
   lnd:
     tlsCertPath: /lnd-bob/tls.cert
     rpcHost: lnd-bob:10009
     macaroonPath: /lnd-bob/admin.macaroon
-paymentAmountMsat: 1000
+paymentAmountMsat: 1211000
+# NOTE(calvin): Ran into contention and retry exhaustion with default 100 processes
+# and no global DB lock (built of lnd master). 10 processes works.
 processes: 100
+# processes: 10
 channels: 10
 channelCapacitySat: 10000000
