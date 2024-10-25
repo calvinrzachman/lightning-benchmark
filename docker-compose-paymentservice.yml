@@ -31,7 +31,7 @@ services:
     # image: czachman/lnd:v0.18.3-beta-calvin
     # image: czachman/lnd:v0.18.3-beta-calvin-2 (success with this)
     # NOTE(calvin): This build does not contain the global DB lock.
-    image: czachman/lnd:v0.18.3-beta-calvin-3
+    image: czachman/lnd:v0.18.3-beta-calvin-4
     depends_on:
       - bitcoind
     environment:
@@ -52,7 +52,7 @@ services:
     # image: czachman/lnd:v0.18.3-beta-calvin
     # image: czachman/lnd:v0.18.3-beta-calvin-2
     # NOTE(calvin): This build does not contain the global DB lock.
-    image: czachman/lnd:v0.18.3-beta-calvin-3
+    image: czachman/lnd:v0.18.3-beta-calvin-4
     depends_on:
       - bitcoind
     environment:
@@ -69,7 +69,16 @@ services:
     # image: czachman/paymentservice:v0.3.2-beta-dev-chanrouter
     # NOTE(calvin): This build depends on lnd/kvdb that does *not* have global
     # DB lock for postgres.
-    image: czachman/paymentservice:v0.3.7-beta-dev-chanrouter
+    # image: czachman/paymentservice:v0.3.7-beta-dev-chanrouter
+    # NOTE(calvin): this one has some invoice RPC perm changes.
+    # image: czachman/paymentservice:v0.3.8-beta-dev-chanrouter
+    # NOTE(cal): This has invoice interceptor.
+    # image: czachman/paymentservice:v0.3.9-beta-dev-chanrouter
+    # NOTE(cal): This has thread safe replay log for invoice service HTLC
+    # interceptor handler.
+    # image: czachman/paymentservice:v0.3.10-beta-dev-chanrouter
+    # NOTE(cal): This uses no-op replay log. Saw ~40% increase in tps on test.
+    image: czachman/paymentservice:v0.3.12-beta-dev-chanrouter
     container_name: paymentservice
     # networks:
     #   - lightning-benchmark_default
