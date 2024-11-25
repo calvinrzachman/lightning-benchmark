@@ -51,6 +51,9 @@ esac
 echo DOCKER_COMPOSE_FILE: $DOCKER_COMPOSE_FILE
 echo LOADTEST_CONFIG_FILE: $LOADTEST_CONFIG_FILE
 
+# Setup postgres creds
+source ./pg-cert.sh
+
 # Make sure that all leftovers from a previous run are removed. 
 docker-compose -f $DOCKER_COMPOSE_FILE down -v --remove-orphans
 
